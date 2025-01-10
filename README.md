@@ -1,2 +1,2 @@
 # Formula 1 Console Racing
-![WOOOOOW](./doc/images/wow.png)
+![WOOOOOW](./docs/images/wow.png)
