@@ -38,4 +38,5 @@ Run with Visual Studio
 
 This game is not a realistic simulation. Aspects, like car positioning for corners and engine behavior are simplified. The shift lights are also 14 instead of 15 for symmetry.
 
+${{\color{MediumSpringGreen}● ● ● ● ●}}\$ ${{\color{Red}● ● ● ● ●}}\$ ${{\color{MediumSlateBlue}● ● ● ● ●}}\$
 
