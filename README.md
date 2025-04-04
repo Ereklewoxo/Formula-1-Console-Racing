@@ -1,4 +1,4 @@
-# ${{\color{Red}\Huge\textsf{Formula 1 Console Racing}}}\$
+# ${{\color{Red}\Huge\textsf{Formula 1}}}\$ ${{\Huge\textsf{Console Racing}}}\$
 
 ![WOOOOOW](./docs/images/wow.png)
 
