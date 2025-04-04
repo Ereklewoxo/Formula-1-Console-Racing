@@ -88,8 +88,8 @@ public partial class Racing
 
         long elapsedTime;
 
-        float fCurvature = 0.0f, fTrackCurvature = 0.0f, fPlayerCurvature = 0.0f, fCpuCurvature = 0.0f, fTrackDistance = 0.0f,
-              fDistance = 0.0f, fCarPos = 0.0f, fCpuCarPos = 0.0f, turnRate, cpuTurnRate, fOffset, fTargetCurvature, fTrackCurveDiff,
+        float fCurvature = 0.0f, fTrackCurvature = 0.0f, fPlayerCurvature = 0.0f, fTrackDistance = 0.0f,
+              fDistance = 0.0f, fCarPos = 0.0f, turnRate, fOffset, fTargetCurvature, fTrackCurveDiff,
               lowSpeedThreshold = 0.15f, highSpeedThreshold = 0.3f;
 
         const int targetFps = 39,
@@ -1180,15 +1180,15 @@ class Car
 
     public static readonly float[] GearMaxSpeed =
     [
-        -20.0f, 
-        0.00001f, 
-        0.01f, 2.0f, 11.0f, 20.0f, 110.0f, 
-        135.0f, 
-        170.0f, 
-        200.0f, 
-        230.0f, 
-        265.0f, 
-        300.0f, 
+        -20.0f,
+        0.00001f,
+        0.01f, 2.0f, 11.0f, 20.0f, 110.0f,
+        135.0f,
+        170.0f,
+        200.0f,
+        230.0f,
+        265.0f,
+        300.0f,
         300.0f, 320.0f, 375.0f
     ];
 }
