@@ -171,6 +171,7 @@ public partial class Racing
             playerCar.Speed = Math.Clamp(playerCar.Speed,
                                    playerCar.Reverse ? Car.GearMaxSpeed[0] / 375.0f : 0.0f,
                                    playerCar.Reverse ? 0.0f : Car.GearMaxSpeed[playerCar.Gear] / 375.0f);
+
             playerCar.UpdateRPM();
 
             engineSound.UpdateEngineState(playerCar.RPM, playerCar.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
