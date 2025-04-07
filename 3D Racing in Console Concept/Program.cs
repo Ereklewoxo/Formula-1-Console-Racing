@@ -768,8 +768,8 @@ class TracksideSceneryRenderer(
     int screenWidth,
     int screenHeight,
     int seed = 123456,
-    float maxVisibleDistance = 600f,
-    float treeSpacing = 80f,
+    float maxVisibleDistance = 100f,
+    float treeSpacing = 8f,
     float exponent = 0.8f,
     float heightJitterFactor = 0.5f,
     int baseCanopyHalfWidth = 28,
@@ -831,7 +831,8 @@ class TracksideSceneryRenderer(
                 if (pixelY < 0 || pixelY >= screenHeight) continue;
                 for (int dx = -canopyHalfWidth; dx <= canopyHalfWidth; dx++)
                 {
-                    int pixelX = treeCenterX + dx;
+                    int cone = dx <= 0 ? -canopyRow : canopyRow;
+                    int pixelX = treeCenterX + dx - cone / 2;
                     if (pixelX >= 0 && pixelX < screenWidth)
                         renderer.Pixel(pixelX, pixelY, foliageColor);
                 }
@@ -1300,7 +1301,7 @@ class Car
     public float DRS => DRSEngaged ? 1.0f : 0.0f;
     public float Drag => (0.02f - (0.02f * DRS)) * Speed ;
     public float ERS { get; set; } = 100.0f;
-    public ERSStates ERSState { get; set; } = ERSStates.Balanced;
+    public ERSStates ERSState { get; set; } = ERSStates.Harvest;
     public enum ERSStates { Off, Harvest, Balanced, Attack }
     public void UpdateRPM()
     {
