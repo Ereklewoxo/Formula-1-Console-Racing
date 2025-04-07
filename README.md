@@ -14,14 +14,14 @@ Terminal-based racing game featuring a simple control system and lap timing
 
 ## Controls
 ```
-                                               ╭─────╮                         
- W - Accelerate                                ╰╮    ╰─╮
- A - Turn Left                                  │      ╰─╮                       
- D - Turn Right                                 ╰╮       ╰─╮                  
- S - Brake                                       │         ╰──╮
-                                                 │            ╰───────────────╮
- R - Toggle Reverse Gear                         ╰─╮      ╭╮                ╭─╯
-                                                   ╰──────╯╰────────────╌───╯  
+ W - Accelerate                                ╭─────╮                         
+ A - Turn Left                                 ╰╮    ╰─╮
+ D - Turn Right                                 │      ╰─╮                       
+ S - Brake                                      ╰╮       ╰─╮                  
+                                                 │         ╰──╮
+ R - Reverse Gear                                │            ╰───────────────╮
+ SPACE - Toggle DRS                              ╰─╮      ╭╮                ╭─╯
+ 1 2 3 - ERS Modes                                 ╰──────╯╰────────────╌───╯  
 ```
 
 ## Running the Game
