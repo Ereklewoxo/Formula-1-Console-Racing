@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using NAudio.Wave;
+using static Car;
 using static Racing;
 public static partial class Keyboard
 {
@@ -64,20 +64,24 @@ public partial class Racing
     }
     #endregion
     static void Main()
-    {
+    {   
         Console.OutputEncoding = Encoding.UTF8;
         CustomColor.Color();
         SetConsoleFullscreen();
         SetConsoleBufferSizeToWindowSize();
         Console.CursorVisible = false;
+
+        Console.WriteLine("PRESS ANY KEY");
+        Console.ReadKey(true);
+
         Console.Write("\x1b[48;2;65;120;200m");
 
-        Console.ReadKey(false);
-
         Renderer renderer = new(Console.LargestWindowWidth, Console.LargestWindowHeight);
+
         TrackRenderer trackRenderer = new(renderer);
         SceneryRenderer sceneryRenderer = new(renderer);
         HudRenderer hudRenderer = new(renderer);
+
         SectorManager sectorManager = new();
 
         Car playerCar = new();
@@ -94,11 +98,14 @@ public partial class Racing
 
         const int targetFps = 39,
                   frameTime = 1000 / targetFps;
-
         const float fElapsedTime = (float)frameTime / 1000;
+
+        var (nCornerNumber, fMetersLeft, nextCornertype) = CheckNextCorner(fDistance);
 
         foreach (var t in vecTrack)
             fTrackDistance += t.Distance;
+
+        TracksideSceneryRenderer tracksideScenery = new(renderer, Console.LargestWindowWidth, Console.LargestWindowHeight);
 
         Stopwatch stopwatch = new();
         stopwatch.Start();
@@ -109,27 +116,31 @@ public partial class Racing
         Stopwatch time = new();
         time.Start();
 
-        EngineSound engineSound = new();
-        engineSound.StartSound(); // Start engine sound
+        EngineSound engineSound1 = new();
+        engineSound1.StartSound();
         EngineSound engineSound2 = new();
-        engineSound2.StartSound(); // Start engine sound
+        engineSound2.StartSound();
         EngineSound engineSound3 = new();
-        engineSound3.StartSound(); // Start engine sound
+        engineSound3.StartSound(); 
         EngineSound engineSound4 = new();
-        engineSound4.StartSound(); // Start engine sound
+        engineSound4.StartSound();
 
         while (true)
         {
             stopwatch.Restart();
 
             direction = 0;
-            turnRate = CalculateTrunRate(lowSpeedThreshold, highSpeedThreshold, fElapsedTime, playerCar);
+            turnRate = CalculateTurnRate(lowSpeedThreshold, highSpeedThreshold, fElapsedTime, playerCar);
 
             #region controls
             if (Keyboard.IsKeyPressed(ConsoleKey.W))
+            {
                 playerCar.Accelerate(1.0f, fElapsedTime);
+                playerCar.ChargeERS(0.05f, fElapsedTime);
+            }
             else
-                playerCar.Decelerate(0.4f, fElapsedTime);
+                playerCar.Decelerate(0.45f, fElapsedTime);
+
             if (Keyboard.IsKeyPressed(ConsoleKey.A))
             {
                 direction = 2;
@@ -137,6 +148,7 @@ public partial class Racing
                 if (playerCar.Gear != 1)
                     playerCar.Decelerate(0.01f, fElapsedTime);
             }
+
             if (Keyboard.IsKeyPressed(ConsoleKey.D))
             {
                 direction = 1;
@@ -144,15 +156,36 @@ public partial class Racing
                 if (playerCar.Gear != 1)
                     playerCar.Decelerate(0.01f, fElapsedTime);
             }
+
             if (Keyboard.IsKeyPressed(ConsoleKey.S))
+            {
                 playerCar.Decelerate(3.0f, fElapsedTime);
-            if (Keyboard.IsKeyPressed(ConsoleKey.Spacebar))
-                playerCar.ClutchEngaged = true;
+                playerCar.ChargeERS(0.9f, fElapsedTime);
+            }
+            if (Keyboard.IsKeyPressed(ConsoleKey.Spacebar) && keyDelay.ElapsedMilliseconds > 350)
+            {
+                playerCar.DRSEngaged = !playerCar.DRSEngaged;
+                keyDelay.Restart();
+            }
+
             if (Keyboard.IsKeyPressed(ConsoleKey.R) && keyDelay.ElapsedMilliseconds > 350)
             {
                 playerCar.ReverseGear();
                 keyDelay.Restart();
             }
+
+            if (Keyboard.IsKeyPressed(ConsoleKey.Oem3)) // ~
+                playerCar.ERSState = ERSStates.Off;
+
+            if (Keyboard.IsKeyPressed(ConsoleKey.D1))
+                playerCar.ERSState = ERSStates.Harvest;
+
+            if (Keyboard.IsKeyPressed(ConsoleKey.D2))
+                playerCar.ERSState = ERSStates.Balanced;
+
+            if (Keyboard.IsKeyPressed(ConsoleKey.D3))
+                playerCar.ERSState = ERSStates.Attack;
+
             // Automatic Gearbox
             if (playerCar.Speed >= Car.GearMaxSpeed[playerCar.Gear] / 375.0f)
                 playerCar.ShiftUp();
@@ -160,24 +193,17 @@ public partial class Racing
                 playerCar.ShiftDown();
             #endregion
 
-            if ((fCarPos * fCurvature > 0 && Math.Abs(fCarPos) > 0.6f) ||
-                (Math.Abs(fCarPos - fCurvature) > 0.6f && !playerCar.Reverse))
-            {
-                playerCar.Speed += (playerCar.Reverse ? 1 : -1) *
-                             Math.Abs(fCurvature * 5 * playerCar.Speed * (playerCar.Gear / 5) + 1.0f) *
-                             fElapsedTime;
-            }
+            if ((fCarPos * fCurvature > 0 && Math.Abs(fCarPos) > 0.6f) || (Math.Abs(fCarPos - fCurvature) > 0.6f && !playerCar.Reverse))
+                playerCar.Speed += (playerCar.Reverse ? 1 : -1) * Math.Abs(fCurvature * 5 * playerCar.Speed * (playerCar.Gear / 5) + 1.0f) * fElapsedTime;
 
-            playerCar.Speed = Math.Clamp(playerCar.Speed,
-                                   playerCar.Reverse ? Car.GearMaxSpeed[0] / 375.0f : 0.0f,
-                                   playerCar.Reverse ? 0.0f : Car.GearMaxSpeed[playerCar.Gear] / 375.0f);
+            playerCar.Speed = Math.Clamp(playerCar.Speed, playerCar.Reverse ? Car.GearMaxSpeed[0] / 375.0f : 0.0f, playerCar.Reverse ? 0.0f : Car.GearMaxSpeed[playerCar.Gear] / 375.0f);
 
             playerCar.UpdateRPM();
 
-            engineSound.UpdateEngineState(playerCar.RPM, playerCar.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
-            engineSound2.UpdateEngineState(playerCar.RPM, playerCar.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
-            engineSound3.UpdateEngineState(playerCar.RPM, playerCar.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
-            engineSound4.UpdateEngineState(playerCar.RPM, playerCar.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
+            engineSound1.UpdateEngineState(playerCar.RPM, Car.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
+            engineSound2.UpdateEngineState(playerCar.RPM, Car.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
+            engineSound3.UpdateEngineState(playerCar.RPM, Car.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
+            engineSound4.UpdateEngineState(playerCar.RPM, Car.NormalizeGear(playerCar.Gear), playerCar.Acceleration);
 
             fOffset = 0;
             nTrackSection = 0;
@@ -205,7 +231,7 @@ public partial class Racing
 
             sectorManager.UpdateSectorHUD();
 
-            var (metersLeft, nextCornertype) = CheckForUpcomingCorner(fDistance);
+            (nCornerNumber, fMetersLeft, nextCornertype) = CheckNextCorner(fDistance);
 
             if (nTrackSection > 0)
             {
@@ -216,51 +242,34 @@ public partial class Racing
 
                 trackRenderer.DrawTrack(fCurvature, fDistance, fTrackDistance);
                 sceneryRenderer.DrawScenery(fTrackCurvature);
+                tracksideScenery.DrawTrees(fCurvature, fDistance);
             }
 
             fCarPos = fPlayerCurvature - fTrackCurvature * 9.0f;
             nCarX = Console.LargestWindowWidth / 2 + ((int)(Console.LargestWindowWidth * fCarPos) / 2) - 20;
+
             renderer.DrawCar(nCarX, nCarY, "#E8002D", direction, fDistance);
 
             hudRenderer.TimesHud(sectorManager.GetCurrentHudTime(time), sectorManager.BestTimes[0]);
-            hudRenderer.DrawCircuitMap(Console.LargestWindowWidth / 2 - HudRenderer.CircuitSprite[0].Length / 2, 1, "#FFFFFF", "#E8002D",
-                (int)fDistance, nTrackSection, (int)vecTrack[nTrackSection - 1].Distance, (int)fOffset);
-            hudRenderer.DrawNextCorner(Console.LargestWindowWidth / 2 + HudRenderer.CornerTypeGraphic[0].Length + 24, 3, "#FFFFFF", metersLeft, nextCornertype);
+
+            hudRenderer.DrawCircuitMap(Console.LargestWindowWidth / 2 - HudRenderer.CircuitSprite[0].Length / 2, 1, 
+                "#FFFFFF", "#E8002D", (int)fDistance, nTrackSection, (int)vecTrack[nTrackSection - 1].Distance, (int)fOffset);
+
+            hudRenderer.DrawNextCorner(Console.LargestWindowWidth / 2 + HudRenderer.CornerTypeGraphic[0].Length + 24, 3, 
+                "#FFFFFF", fMetersLeft, nCornerNumber, nextCornertype);
+
             hudRenderer.HudBuilder(playerCar);
+
             hudRenderer.SectorsHud(sectorManager.SectorColors);
 
             renderer.DisplayFrame();
+
             elapsedTime = stopwatch.ElapsedMilliseconds;
             if (elapsedTime < frameTime)
                 Thread.Sleep((int)(frameTime - elapsedTime));
         }
     }
-    public static (float metersBeforeCorner, CornerType) CheckForUpcomingCorner(float currentDistance)
-    {
-        float distanceCovered = 0.0f;
 
-        foreach (var segment in CircuitVecs)
-        {
-            distanceCovered += segment.Distance;
-
-            if (segment.IsReal && distanceCovered > currentDistance && segment.CornerType != 0) 
-            {
-                float metersBeforeCorner = distanceCovered - currentDistance;
-                return (metersBeforeCorner, segment.CornerType);
-            }
-        }
-        return (0.0f, 0);
-    }
-    public enum CornerType
-    {
-        None = 0,
-        ChicaneR = 1,
-        ChicaneL = 2,
-        HairpinR = 3,
-        HairpinL = 4,
-        NormalR = 5, 
-        NormalL = 6
-    }
     public static readonly List<CircuitSegment> CircuitVecs =
     [
         new CircuitSegment(0.0f, 550.0f, 0, 0, false),
@@ -287,7 +296,7 @@ public partial class Racing
             new CircuitSegment(0.0f, 10.0f, -2,0, false),
         new CircuitSegment(-0.8f, 70.0f, 8,CornerType.NormalL, true),
         new CircuitSegment(0.8f, 70.0f, 8,0, false),
-        new CircuitSegment(0.3f, 150.0f, 9,CornerType.NormalR, true),
+        new CircuitSegment(0.3f, 130.0f, 9,CornerType.NormalR, true),
         new CircuitSegment(-0.3f, 75.0f, 9,0, false),
         new CircuitSegment(-1.0f, 80.0f, 10,CornerType.NormalL, true),
         new CircuitSegment(1.0f, 50.0f, 10, 0, false),
@@ -297,18 +306,61 @@ public partial class Racing
         new CircuitSegment(0.0f, 100.0f, 11, 0, false),
         new CircuitSegment(0.0f, 70.0f, 11, 0, false)
     ];
-    private static float CalculateTrunRate(float lowSpeedThreshold, float highSpeedThreshold, float fElapsedTime, Car car)
+    public static (int cornerNumber, float metersBeforeCorner, CornerType) CheckNextCorner(float fDistance)
     {
-        if (car.Speed == 0.0f)
-            return 0.15f * fElapsedTime;
-        else if (car.Reverse)
-            return (car.Speed / lowSpeedThreshold < 0.25f ? 0.25f : car.Speed / lowSpeedThreshold) * fElapsedTime;
-        else if (car.Speed <= lowSpeedThreshold)
-            return (car.Speed / lowSpeedThreshold < 0.15f ? 0.15f : car.Speed / lowSpeedThreshold) * fElapsedTime;
-        else if (car.Speed <= highSpeedThreshold)
-            return 1.0f * fElapsedTime;
-        else
-            return (1.0f - ((car.Speed - highSpeedThreshold) / (2.0f - highSpeedThreshold))) * fElapsedTime;
+        float fDistanceCovered = 0.0f;
+
+        foreach (var segment in CircuitVecs)
+        {
+            fDistanceCovered += segment.Distance;
+
+            if (segment.IsReal && fDistanceCovered > fDistance && segment.CornerType != 0) 
+            {
+                float metersBeforeCorner = fDistanceCovered - fDistance;
+                return (segment.CornerNumber, metersBeforeCorner, segment.CornerType);
+            }
+        }
+        return (0, 0.0f, 0);
+    }
+    public enum CornerType
+    {
+        None = 0,
+        ChicaneR = 1,
+        ChicaneL = 2,
+        HairpinR = 3,
+        HairpinL = 4,
+        NormalR = 5, 
+        NormalL = 6
+    }
+    private static float CalculateTurnRate(float fLowSpeedThreshold, float fHighSpeedThreshold, float fElapsedTime, Car car)
+    {
+        float speed = car.Speed;
+        float drsPenalty = (car.DRS == 1.0f) ? 0.3f : 1.0f;
+
+        if (speed == 0.0f)
+        {
+            return 0.15f * fElapsedTime * drsPenalty;
+        }
+
+        if (car.Reverse)
+        {
+            return 0.2f * fElapsedTime;
+        }
+
+        if (speed <= fLowSpeedThreshold)
+        {
+            float baseRate = speed / fLowSpeedThreshold;
+            if (baseRate < 0.15f) baseRate = 0.15f;
+            return baseRate * fElapsedTime * drsPenalty;
+        }
+
+        if (speed <= fHighSpeedThreshold)
+        {
+            return 1.0f * fElapsedTime * drsPenalty;
+        }
+
+        float falloff = 1.0f - ((speed - fHighSpeedThreshold) / (2.0f - fHighSpeedThreshold));
+        return falloff * fElapsedTime * drsPenalty;
     }
 }
 class SectorManager
@@ -318,7 +370,8 @@ class SectorManager
     public TimeSpan[] CurrentSectorTimes { get; private set; }
     public TimeSpan[] BestTimes { get; private set; }
     public string[] SectorColors { get; private set; }
-    public int SectorDisplayDuration { get; set; } = 3000;
+
+    public const int SectorDisplayDuration = 3000;
 
     public SectorManager()
     {
@@ -330,24 +383,16 @@ class SectorManager
             new Stopwatch()
         ];
         CurrentSectorTimes = [TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero];
-        BestTimes = new TimeSpan[4]; // [lap best, sector1 best, sector2 best, sector3 best]
-        // Default HUD colors (greyed out)
+        BestTimes = new TimeSpan[4]; // [lap best, sector 1 best, sector 2 best, sector 3 best]
+        // grey
         SectorColors = ["#333333", "#333333", "#333333"];
     }
 
-    /// <summary>
     /// Updates the sector times and HUD colors when a sector boundary is reached.
-    /// </summary>
-    /// <param name="cornerNumber">
-    /// The corner indicator from the track. 
-    /// For example, -1 for the end of sector 1, -2 for the end of sector 2.
-    /// </param>
-    /// <param name="lapTime">The current lap timer's elapsed time.</param>
-    /// <param name="distance">The current distance traveled on the track.</param>
-    /// <param name="trackDistance">The total length of the track.</param>
+    /// -1 for the end of sector 1, -2 for the end of sector 2.
     public void UpdateSector(int cornerNumber, TimeSpan lapTime, float distance, float trackDistance)
     {
-        // End of sector 1 (first sector)
+        // End of sector 1
         if (cornerNumber == -1 && Sectors[0])
         {
             if (lapTime < BestTimes[1] || BestTimes[1] == TimeSpan.Zero)
@@ -363,7 +408,7 @@ class SectorManager
             SectorTimers[0].Restart();
             Sectors[0] = false;
         }
-        // End of sector 2 (second sector)
+        // End of sector 2
         else if (cornerNumber == -2 && Sectors[1])
         {
             TimeSpan sectorTime = lapTime - BestTimes[1];
@@ -399,21 +444,14 @@ class SectorManager
         }
     }
 
-    /// <summary>
     /// Resets the sector states when a lap is completed.
     /// Also updates the lap best time if the current lap was faster.
-    /// </summary>
-    /// <param name="distance">Reference to the current distance traveled (will be reduced by trackDistance).</param>
-    /// <param name="trackDistance">The total track length.</param>
-    /// <param name="lapTimer">The stopwatch tracking the lap time.</param>
     public void ResetLap(ref float distance, float trackDistance, Stopwatch lapTimer)
     {
         distance -= trackDistance;
-        // Reset sector flags for the new lap.
         Sectors[0] = true;
         Sectors[1] = true;
         Sectors[2] = true;
-        // Update the lap best time if applicable.
         if (lapTimer.Elapsed < BestTimes[0] || BestTimes[0] == TimeSpan.Zero)
         {
             BestTimes[0] = lapTimer.Elapsed;
@@ -430,7 +468,6 @@ class SectorManager
             SectorColors[0] = "#333333";
             SectorColors[1] = "#333333";
             SectorColors[2] = "#333333";
-            // Reset all timers.
             foreach (var timer in SectorTimers)
             {
                 timer.Reset();
@@ -464,11 +501,123 @@ class SectorManager
 class Renderer(int width, int height)
 {
     private readonly int width = width;
-
     private readonly int height = height;
+    private readonly string[,] frame = new string[width, height];
+    public void Text(int x, int y, string text, string hex)
+    {
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (x + i < width && y < height)
+            {
+                frame[x + i, y] += hex + text[i];
+            }
+        }
+    }
+    public void Text(int x, int y, string[] text, string hex)
+    {
+        for (int i = 0; i < text.Length; i++)
+        {
+            for (int n = 0; n < text[i].Length; n++)
+            {
+                if (x + n < width && y < height && text[i][n] != ' ')
+                {
+                    frame[x + n, y + i] += hex + text[i][n];
+                }
+            }
+        }
+    }
+    public void Pixel(int startX, int startY, string hex)
+    {
+        if (startX < width && startY < height)
+        {
+            frame[startX, startY] = hex;
+        }
+    }
+    public void DrawCar(int startX, int startY, string hex, int direction, float distance)
+    {
+        direction = (int)(distance / 10) % 2 == 0 ? direction : direction + 3;
+        int spriteHeight = CarSprite[direction].Length;
+        int spriteWidth = CarSprite[direction][0].Length;
+        int frameX;
 
-    private string[,] frame = new string[width, height];
+        for (int y = 0; y < spriteHeight; y++)
+        {
+            frameX = 0;
+            for (int x = 0; x < spriteWidth; x++)
+            {
+                if (startX + x >= 0 && startX + x < width && startY + y >= 0 && startY + y < height && CarSprite[direction][y][x] != ' ')
+                {
+                    if (CarSprite[direction][y][x] == '□' && x < spriteWidth)
+                        frame[startX + frameX, startY + y] = "#121212";
+                    else if (CarSprite[direction][y][x] == '0' && x < spriteWidth)
+                        frame[startX + frameX, startY + y] = "#1f1f1f";
+                    else if (CarSprite[direction][y][x] == '▒' && x < spriteWidth)
+                        frame[startX + frameX, startY + y] = "#222222";
+                    else if (CarSprite[direction][y][x] == '◘' && x < spriteWidth)
+                        frame[startX + frameX, startY + y] = "#ad0a2a";
+                    else
+                        frame[startX + frameX, startY + y] = hex;
+                }
+                if (frameX < spriteWidth)
+                    frameX++;
+            }
+        }
+    }
+    public void ClearFrame()
+    {
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                frame[x, y] = null;
+    }
+    public void DisplayFrame()
+    {
+        StringBuilder stringBuilder = new();
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if ((x > 0 && frame[x, y] == null && frame[x - 1, y] != null) || (x == 0 && frame[x, y] == null))
+                    stringBuilder.Append("\x1b[48;2;65;120;200m" + ' ');
+                else if (x > 0 && frame[x, y] == frame[x - 1, y] && frame[x, y] != null && (frame[x, y].Length == 7 || (frame[x, y].Length == 8 && frame[x, y][^1] == ' ')) || (frame[x, y] == null))
+                    stringBuilder.Append(' ');
+                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] == null)
+                    stringBuilder.Append(SetColor(frame[x, y]) + SetColorText(frame[x, y][7..]) + frame[x, y][^1]);
+                else if (frame[x, y].Length == 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length == 8 && frame[x, y][..7] == frame[x - 1, y][..7])
+                    stringBuilder.Append(frame[x, y][^1]);
+                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length > 8 && frame[x, y][..14] == frame[x - 1, y][..14])
+                    stringBuilder.Append(frame[x, y][^1]);
+                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length > 8 && frame[x, y][7..14] == frame[x - 1, y][7..14])
+                    stringBuilder.Append(SetColor(frame[x, y]) + frame[x, y][^1]);
+                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length >= 7)
+                    stringBuilder.Append(SetColor(frame[x, y]) + SetColorText(frame[x, y][7..]) + frame[x, y][^1]);
+                else if (frame[x, y].Length > 8)
+                    stringBuilder.Append(SetColorText(frame[x, y][7..]) + frame[x, y][^1]);
+                else if (frame[x, y].Length == 8)
+                    stringBuilder.Append(SetColorText(frame[x, y]) + frame[x, y][^1]);
+                else if (frame[x, y].Length == 7 && x > 0 && frame[x - 1, y] == frame[x, y])
+                    stringBuilder.Append(' ');
+                else if (frame[x, y].Length == 7 && x > 0 && frame[x - 1, y] == null)
+                    stringBuilder.Append(SetColor(frame[x, y]) + ' ');
+                else
+                    stringBuilder.Append(SetColor(frame[x, y]) + ' ');
+            }
+            if (y < height - 1)
+                stringBuilder.AppendLine();
+        }
 
+        Console.SetCursorPosition(0, 0);
+        Console.Write($"\x1b[48;2;65;120;200m" + stringBuilder);
+
+        ClearFrame();
+    }
+    public static string SetColor(string hex) =>
+        $"\x1b[48;2;{Convert.ToInt32(hex.Substring(1, 2), 16)};" +
+                  $"{Convert.ToInt32(hex.Substring(3, 2), 16)};" +
+                  $"{Convert.ToInt32(hex.Substring(5, 2), 16)}m";
+    public static string SetColorText(string hex) =>
+        $"\x1b[38;2;{Convert.ToInt32(hex.Substring(1, 2), 16)};" +
+                  $"{Convert.ToInt32(hex.Substring(3, 2), 16)};" +
+                  $"{Convert.ToInt32(hex.Substring(5, 2), 16)}m";
     public static readonly string[][] CarSprite =
     [
         [
@@ -532,172 +681,201 @@ class Renderer(int width, int height)
             "□□□□□□□ ▒ ▒ ▒ ▒ ▒     ▒ ▒ ▒ ▒ ▒ □□□□□□□"
         ]
     ];
-    public void Text(int x, int y, string text, string hex)
-    {
-        for (int i = 0; i < text.Length; i++)
-        {
-            if (x + i < width && y < height)
-            {
-                frame[x + i, y] += hex + text[i];
-            }
-        }
-    }
-    public void Text(int x, int y, string[] text, string hex)
-    {
-        for (int i = 0; i < text.Length; i++)
-        {
-            for (int n = 0; n < text[i].Length; n++)
-            {
-                if (x + n < width && y < height && text[i][n] != ' ')
-                {
-                    frame[x + n, y + i] += hex + text[i][n];
-                }
-            }
-        }
-    }
-    public void Pixel(int startX, int startY, string hex)
-    {
-        if (startX < width && startY < height)
-        {
-            frame[startX, startY] = hex;
-        }
-    }
-    public void DrawCar(int startX, int startY, string hex, int direction, float distance)
-    {
-        direction = (int)(distance / 10) % 2 == 0 ? direction : direction + 3;
-        int spriteHeight = CarSprite[direction].Length;
-        int spriteWidth = CarSprite[direction][0].Length;
-        int frameX;
-
-        for (int y = 0; y < spriteHeight; y++)
-        {
-            frameX = 0;
-            for (int x = 0; x < spriteWidth; x++)
-            {
-                if (startX + x >= 0 && startX + x < width && startY + y >= 0 && startY + y < height && CarSprite[direction][y][x] != ' ')
-                {
-                    if (CarSprite[direction][y][x] == '□' && x < spriteWidth)
-                        frame[startX + frameX, startY + y] = "#121212";
-                    else if (CarSprite[direction][y][x] == '0' && x < spriteWidth)
-                        frame[startX + frameX, startY + y] = "#1f1f1f";
-                    else if (CarSprite[direction][y][x] == '▒' && x < spriteWidth)
-                        frame[startX + frameX, startY + y] = "#222222";
-                    else if (CarSprite[direction][y][x] == '◘' && x < spriteWidth)
-                        frame[startX + frameX, startY + y] = "#ad0a2a";
-                    else
-                        frame[startX + frameX, startY + y] = hex;
-                }
-                if (frameX < spriteWidth)
-                    frameX++;
-            }
-        }
-    }
-    public void ClearFrame()
-    {
-        frame = new string[width, height];
-    }
-    public void DisplayFrame()
-    {
-        StringBuilder stringBuilder = new();
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                if ((x > 0 && frame[x, y] == null && frame[x - 1, y] != null) || (x == 0 && frame[x, y] == null))
-                    stringBuilder.Append("\x1b[48;2;65;120;200m" + ' ');
-                else if (x > 0 && frame[x, y] == frame[x - 1, y] && frame[x, y] != null && (frame[x, y].Length == 7 || (frame[x, y].Length == 8 && frame[x, y][^1] == ' ')) || (frame[x, y] == null))
-                    stringBuilder.Append(' ');
-                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] == null)
-                    stringBuilder.Append(SetColor(frame[x, y]) + SetColorText(frame[x, y][7..]) + frame[x, y][^1]);
-                else if (frame[x, y].Length == 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length == 8 && frame[x, y][..7] == frame[x - 1, y][..7])
-                    stringBuilder.Append(frame[x, y][^1]);
-                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length > 8 && frame[x, y][..14] == frame[x - 1, y][..14])
-                    stringBuilder.Append(frame[x, y][^1]);
-                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length > 8 && frame[x, y][7..14] == frame[x - 1, y][7..14])
-                    stringBuilder.Append(SetColor(frame[x, y]) + frame[x, y][^1]);
-                else if (frame[x, y].Length > 8 && x > 0 && frame[x - 1, y] != null && frame[x - 1, y].Length >= 7)
-                    stringBuilder.Append(SetColor(frame[x, y]) + SetColorText(frame[x, y][7..]) + frame[x, y][^1]);
-                else if (frame[x, y].Length > 8)
-                    stringBuilder.Append(SetColorText(frame[x, y][7..]) + frame[x, y][^1]);
-                else if (frame[x, y].Length == 8)
-                    stringBuilder.Append(SetColorText(frame[x, y]) + frame[x, y][^1]);
-                else if (frame[x, y].Length == 7 && x > 0 && frame[x - 1, y] == frame[x, y])
-                    stringBuilder.Append(' ');
-                else if (frame[x, y].Length == 7 && x > 0 && frame[x - 1, y] == null)
-                    stringBuilder.Append(SetColor(frame[x, y]) + ' ');
-                else
-                    stringBuilder.Append(SetColor(frame[x, y]) + ' ');
-            }
-            if (y < height - 1)
-                stringBuilder.AppendLine();
-        }
-
-        Console.SetCursorPosition(0, 0);
-        Console.Write($"\x1b[48;2;65;120;200m" + stringBuilder);
-
-        ClearFrame();
-    }
-    public static string SetColor(string hex) =>
-        $"\x1b[48;2;{Convert.ToInt32(hex.Substring(1, 2), 16)};" +
-                  $"{Convert.ToInt32(hex.Substring(3, 2), 16)};" +
-                  $"{Convert.ToInt32(hex.Substring(5, 2), 16)}m";
-    public static string SetColorText(string hex) =>
-        $"\x1b[38;2;{Convert.ToInt32(hex.Substring(1, 2), 16)};" +
-                  $"{Convert.ToInt32(hex.Substring(3, 2), 16)};" +
-                  $"{Convert.ToInt32(hex.Substring(5, 2), 16)}m";
 }
-class TrackRenderer(Renderer renderer)
+class TrackRenderer
 {
-    private readonly Renderer _renderer = renderer;
-    private readonly int screenHeight = Console.LargestWindowHeight;
+    private readonly Renderer _renderer;
     private readonly int screenHeightHalf = Console.LargestWindowHeight / 2;
     private readonly int screenWidth = Console.LargestWindowWidth;
-    public void DrawTrack(float fCurvature, float fDistance, float fTrackDistance)
-    {
-        float fPerspective, fRoadWidth, fClipWidth, fMiddlePoint , fFinishLineDistance;
-        int nLeftGrass, nLeftClip, nRightClip, nRightGrass, nRow;
-        string nGrassColour, nClipColour;
-        bool finishLine;
 
+    private const string GrassColor1 = "#22B14C";
+    private const string GrassColor2 = "#15D653";
+    private const string ClipColor1 = "#F4F9FF";
+    private const string ClipColor2 = "#CD212A";
+    private const string ClipColor3 = "#008C45";
+    private const string RoadColor = "#4D4D52";
+    private const string FinishColor1 = "#202020";
+    private const string FinishColor2 = "#F0F0F0";
+    public TrackRenderer(Renderer renderer)
+    {
+        _renderer = renderer;
+    }
+    public void DrawTrack(float curvature, float distance, float trackDistance)
+    {
         for (int y = 0; y < screenHeightHalf; y++)
         {
-            fPerspective = y / (screenHeight / 2.0f);
-            fRoadWidth = 0.095f + fPerspective * 0.8f;
-            fClipWidth = fRoadWidth * 0.125f;
-            fRoadWidth *= 0.39f;
+            float perspective = y / (float)screenHeightHalf;
 
-            fMiddlePoint = 0.5f + fCurvature * (float)Math.Pow(1.0f - fPerspective, 3.4);
+            float invPerspective = 1.0f - perspective;
+            float pow34 = (float)Math.Pow(invPerspective, 3.4);
+            float pow28 = (float)Math.Pow(invPerspective, 2.8);
+            float pow2 = invPerspective * invPerspective;
 
-            nLeftGrass = (int)((fMiddlePoint - fRoadWidth - fClipWidth) * screenWidth);
-            nLeftClip = (int)((fMiddlePoint - fRoadWidth) * screenWidth);
-            nRightClip = (int)((fMiddlePoint + fRoadWidth) * screenWidth);
-            nRightGrass = (int)((fMiddlePoint + fRoadWidth + fClipWidth) * screenWidth);
+            float roadWidth = (0.095f + perspective * 0.8f) * 0.39f;
+            float clipWidth = roadWidth * (0.125f / 0.39f);
+            float middlePoint = 0.5f + curvature * pow34;
 
-            nRow = screenHeightHalf + y;
+            int leftGrass = (int)((middlePoint - roadWidth - clipWidth) * screenWidth);
+            int leftClip = (int)((middlePoint - roadWidth) * screenWidth);
+            int rightClip = (int)((middlePoint + roadWidth) * screenWidth);
+            int rightGrass = (int)((middlePoint + roadWidth + clipWidth) * screenWidth);
 
-            fFinishLineDistance = fDistance + screenHeightHalf >= fTrackDistance ? fDistance + 12 - fTrackDistance: fDistance + 12;
-            finishLine = Math.Abs((float)(fFinishLineDistance - y)) <= (float)(y / 30.0f + 0.5f);
+            int row = screenHeightHalf + y;
 
-            nGrassColour = (Math.Sin(18.0f * (float)Math.Pow(1.0f - fPerspective, 2.8) + fDistance * 0.1f) > 0.0f) ? "#22B14C" : "#15D653";
-            nClipColour = (Math.Sin(50.0f * (float)Math.Pow(1.0f - fPerspective, 2) + fDistance) > 0.0f) ? "#FF3434" : "#F2F2F2";
+            float finishLineDistance = (distance + 12 >= trackDistance)
+                ? distance + 12 - trackDistance
+                : distance + 12;
+
+            bool isFinishLine = Math.Abs(finishLineDistance - y) <= (y / 30.0f + 0.5f);
+
+            string grassColor = (Math.Sin(18.0f * pow28 + distance * 0.1f) > 0.0f)
+                ? GrassColor1 : GrassColor2;
+
+            string clipColor = (Math.Sin(50.0f * pow2 + distance) > 0.0f)
+                ? ClipColor1 : (Math.Sin(25.0f * pow2 + distance / 2) > 0.0f) ? ClipColor2 : ClipColor3;
+
 
             for (int x = 0; x < screenWidth; x++)
             {
-                if (x >= 0 && x < nLeftGrass)
-                    _renderer.Pixel(x, nRow, nGrassColour);
-                else if (x >= nLeftGrass && x < nLeftClip)
-                    _renderer.Pixel(x, nRow, nClipColour);
-                else if (finishLine && x >= nLeftGrass && x < nRightClip)
-                    _renderer.Pixel(x, nRow, ((x / 2) + y) % 2 == 0 ? "#202020" : "#F0F0F0");
-                else if (x >= nLeftClip && x < nRightClip)
-                    _renderer.Pixel(x, nRow, "#4D4D52");
-                else if (x >= nRightClip && x < nRightGrass)
-                    _renderer.Pixel(x, nRow, nClipColour);
-                else if (x >= nRightGrass && x < screenWidth)
-                    _renderer.Pixel(x, nRow, nGrassColour);
+                string color;
+
+                if (x < leftGrass || x >= rightGrass)
+                {
+                    color = grassColor;
+                }
+                else if (x < leftClip || (x >= rightClip && x < rightGrass))
+                {
+                    color = clipColor;
+                }
+                else if (x < rightClip)
+                {
+                    color = isFinishLine
+                        ? (((x / 2) + y) % 2 == 0 ? FinishColor1 : FinishColor2)
+                        : RoadColor;
+                }
+                else
+                {
+                    continue;
+                }
+
+                _renderer.Pixel(x, row, color);
             }
         }
     }
+}
+class TracksideSceneryRenderer(
+    Renderer renderer,
+    int screenWidth,
+    int screenHeight,
+    int seed = 123456,
+    float maxVisibleDistance = 600f,
+    float treeSpacing = 80f,
+    float exponent = 0.8f,
+    float heightJitterFactor = 0.5f,
+    int baseCanopyHalfWidth = 28,
+    int baseCanopyHeight = 32,
+    int baseTrunkHalfWidth = 5,
+    int baseTrunkHeight = 10,
+    float roadOffsetFactor = 0.3f,
+    string baseFoliageColor = "#1C8C3D",
+    string baseTrunkColor = "#664332")
+{
+    readonly int halfScreenHeight = screenHeight / 2;
+
+    public void DrawTrees(float curvature, float playerDistance)
+    {
+        int firstTreeIndex = (int)Math.Floor(playerDistance / treeSpacing) + 1;
+        int lastTreeIndex = (int)Math.Floor((playerDistance + maxVisibleDistance) / treeSpacing);
+
+        for (int treeIndex = lastTreeIndex; treeIndex >= firstTreeIndex; treeIndex--)
+        {
+            float treeZ = treeIndex * treeSpacing;
+            float distanceToTree = treeZ - playerDistance;
+            if (distanceToTree <= 0f || distanceToTree > maxVisibleDistance)
+                continue;
+
+            float normalizedDistance = distanceToTree / maxVisibleDistance;
+
+            float verticalEasing = (1f - normalizedDistance) * (1f - normalizedDistance);
+            int trunkBaseRow = halfScreenHeight + (int)(verticalEasing * halfScreenHeight);
+            if (trunkBaseRow < 0 || trunkBaseRow >= screenHeight)
+                continue;
+
+            float dimensionScale = 0.2f + 0.8f * (1f - (float)Math.Pow(normalizedDistance, exponent));
+
+            float relativeRowPosition = (trunkBaseRow - halfScreenHeight) / (float)halfScreenHeight;
+            float inverseRowPosition = 1f - relativeRowPosition;
+            float perspectiveWeight = (float)Math.Pow(inverseRowPosition, 3.4);
+            float roadWidth = (0.095f + relativeRowPosition * 0.8f) * 0.39f;
+            float clippingWidth = roadWidth * (0.125f / 0.39f);
+            float roadMidpoint = 0.5f + curvature * perspectiveWeight;
+
+            int hashValue = Hash32(treeIndex ^ seed);
+            int sideMultiplier = ((hashValue & 1) == 0) ? -1 : +1;
+            float jitterX = (((hashValue >> 1) & 0xFF) / 255f - 0.5f) * 0.2f;
+            float jitterHeight = (((hashValue >> 9) & 0xFF) / 255f - 0.5f) * heightJitterFactor;
+
+            int treeCenterX = (int)((roadMidpoint + sideMultiplier * (roadWidth + clippingWidth + roadOffsetFactor + jitterX)) * screenWidth);
+
+            int canopyHalfWidth = Math.Max(1, (int)(baseCanopyHalfWidth * (1 + jitterHeight) * dimensionScale));
+            int canopyHeight = Math.Max(1, (int)(baseCanopyHeight * (1 + jitterHeight) * dimensionScale));
+            int trunkHalfWidth = Math.Max(1, (int)(baseTrunkHalfWidth * (1 + jitterHeight) * dimensionScale));
+            int trunkHeight = Math.Max(1, (int)(baseTrunkHeight * (1 + jitterHeight) * dimensionScale));
+
+            string foliageColor = RandomizeColor(baseFoliageColor, hashValue, 0.1f);
+            string trunkColor = RandomizeColor(baseTrunkColor, hashValue >> 4, 0.1f);
+
+            for (int canopyRow = 0; canopyRow < canopyHeight; canopyRow++)
+            {
+                int pixelY = trunkBaseRow - trunkHeight - canopyRow;
+                if (pixelY < 0 || pixelY >= screenHeight) continue;
+                for (int dx = -canopyHalfWidth; dx <= canopyHalfWidth; dx++)
+                {
+                    int pixelX = treeCenterX + dx;
+                    if (pixelX >= 0 && pixelX < screenWidth)
+                        renderer.Pixel(pixelX, pixelY, foliageColor);
+                }
+            }
+
+            for (int trunkRow = 0; trunkRow < trunkHeight; trunkRow++)
+            {
+                int pixelY = trunkBaseRow - trunkRow;
+                if (pixelY < 0 || pixelY >= screenHeight) continue;
+                for (int dx = -trunkHalfWidth; dx <= trunkHalfWidth; dx++)
+                {
+                    int pixelX = treeCenterX + dx;
+                    if (pixelX >= 0 && pixelX < screenWidth)
+                        renderer.Pixel(pixelX, pixelY, trunkColor);
+                }
+            }
+        }
+    }
+
+    private static int Hash32(int x)
+    {
+        unchecked
+        {
+            x = ((x >> 16) ^ x) * 0x45d9f3b;
+            x = ((x >> 16) ^ x) * 0x45d9f3b;
+            return (x >> 16) ^ x;
+        }
+    }
+
+    private static string RandomizeColor(string baseHexColor, int seedHash, float variationRange)
+    {
+        string hex = baseHexColor.TrimStart('#');
+        int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        float variation = (((seedHash & 0xFF) / 255f) * 2f - 1f) * variationRange;
+        r = Clamp((int)(r * (1f + variation)), 0, 255);
+        g = Clamp((int)(g * (1f + variation)), 0, 255);
+        b = Clamp((int)(b * (1f + variation)), 0, 255);
+        return $"#{r:X2}{g:X2}{b:X2}";
+    }
+
+    private static int Clamp(int value, int min, int max) =>
+        value < min ? min : (value > max ? max : value);
 }
 class SceneryRenderer(Renderer renderer)
 {
@@ -897,13 +1075,16 @@ class HudRenderer(Renderer renderer)
             "       ╵"
         ]
     ];
-    public static string[] hud =
+    public static string[][] hud =
     [
-        "          ╭────────────────╮          ",
-        "──────────╯                ╰──────────",
-        "               ╮      ╭               ",
-        "               │      │               ",
-        "               ╯      ╰               "
+        [        
+            "          ╭────────────────╮          ",
+            "──────────╯                ╰──────────",
+        ],                                          [
+            "               ╮      ╭               ",
+            "               │      │               ",
+            "               ╯      ╰               "
+        ]
     ];
     public static string[] times =
     [
@@ -960,7 +1141,7 @@ class HudRenderer(Renderer renderer)
     };
     public void UpdateShiftLights(Car car)
     {
-        int preG, gear, carGear = car.NormalizeGear(car.Gear);
+        int preG, gear, carGear = Car.NormalizeGear(car.Gear);
 
         (preG, gear) = carGear switch
         {
@@ -988,12 +1169,22 @@ class HudRenderer(Renderer renderer)
             );
         }
     }
-    public void DrawNextCorner(int x, int y, string hex, float distanceBefore, CornerType cornerType)
+    public void DrawNextCorner(int x, int y, string hex, float distanceBefore, int cornerNumber, CornerType cornerType)
     {
-        if (distanceBefore < 100 && distanceBefore != 0)
+        string cornerNumberString = (int)cornerType switch
+        {
+            1 or 2 => $"Turn {cornerNumber} & {cornerNumber + 1}",
+            0 => "",
+            _ => $"Turn {cornerNumber}"
+        };
+
+        if (distanceBefore is > 0 and < 100)
             hex = (int)(distanceBefore / 10) % 2 == 0 ? "#BDBDBD" : hex;
+
         string[] sprite = CornerTypeGraphic[(int)cornerType];
+
         _renderer.Text(x, y, sprite, hex);
+        _renderer.Text(x + 12, y + 2, cornerNumberString, "#FFFFFF");
     }
     public void DrawCircuitMap(int x, int y, string hex, string hexIndicator, int distance, int section, int sectorDistance, int offset)
     {
@@ -1020,18 +1211,22 @@ class HudRenderer(Renderer renderer)
     public void HudBuilder(Car car)
     {
         UpdateShiftLights(car);
-        _renderer.Text(Console.LargestWindowWidth / 2 - 19, Console.LargestWindowHeight - 6, hud, "#101317");
+        string color = car.DRSEngaged ? "#12c000" : "#101317";
+        _renderer.Text(Console.LargestWindowWidth / 2 - 19, Console.LargestWindowHeight - 6, hud[0], color);
+        _renderer.Text(Console.LargestWindowWidth / 2 - 19, Console.LargestWindowHeight - 4, hud[1], "#101317");
         _renderer.Text(Console.LargestWindowWidth / 2 - 2, Console.LargestWindowHeight - 4, HeaderGear[car.Gear], "#FFFFFF");
 
         _renderer.Text(Console.LargestWindowWidth / 2 + 5, Console.LargestWindowHeight - 3, "км/ʜ", "#ababab");
         _renderer.Text(Console.LargestWindowWidth / 2 + 13 - ((int)Math.Abs(car.Speed * 375)).ToString().Length, Console.LargestWindowHeight - 3, ((int)Math.Abs(car.Speed * 375)).ToString(), "#FFFFFF");
-        _renderer.Text(Console.LargestWindowWidth / 2 - 15,  Console.LargestWindowHeight - 3, "23%╺", "#F1C701");
-        _renderer.Pixel(Console.LargestWindowWidth / 2 - 11, Console.LargestWindowHeight - 3, "#F1C701");
-        _renderer.Pixel(Console.LargestWindowWidth / 2 - 10, Console.LargestWindowHeight - 3, "#F1C701");
-        _renderer.Pixel(Console.LargestWindowWidth / 2 - 9,  Console.LargestWindowHeight - 3, "#8c7f3f");
-        _renderer.Pixel(Console.LargestWindowWidth / 2 - 8,  Console.LargestWindowHeight - 3, "#8c7f3f");
-        _renderer.Pixel(Console.LargestWindowWidth / 2 - 7,  Console.LargestWindowHeight - 3, "#8c7f3f");
-        _renderer.Text(Console.LargestWindowWidth / 2 - 9, Console.LargestWindowHeight - 3, "Ϟ", "#000000");
+        
+        _renderer.Text(Console.LargestWindowWidth / 2 - 15 - (((int)car.ERS).ToString().Length - 2),  Console.LargestWindowHeight - 3, $"{(int)car.ERS}%╺", "#F1C701");
+        for(int i = 0; i < 5; i++)
+        {
+            color = i * 20 < (int)car.ERS ? "#F1C701" : "#8c7f3f";
+            _renderer.Pixel(Console.LargestWindowWidth / 2 - 7 - i, Console.LargestWindowHeight - 3, color);
+        }
+        _renderer.Text(Console.LargestWindowWidth / 2 - 9, Console.LargestWindowHeight - 3, "Ϟ", "#FFFFFF");
+        _renderer.Text(Console.LargestWindowWidth / 2 - 6 - car.ERSState.ToString().Length, Console.LargestWindowHeight - 2, car.ERSState.ToString(), "#ababab");
     }
     public void TimesHud(TimeSpan time, TimeSpan bestTime)
     {
@@ -1078,21 +1273,35 @@ class HudRenderer(Renderer renderer)
 }
 class Car
 {
+    public static int NormalizeGear(int gear)
+    {
+        if (gear == 0) return 1;
+        if (gear == 1) return 0;
+        if (gear <= 6) return 1;
+        if (gear == 7) return 2;
+        if (gear == 8) return 3;
+        if (gear == 9) return 4;
+        if (gear == 10) return 5;
+        if (gear == 11) return 6;
+        if (gear == 12) return 7;
+        return 8;
+    }
     private static readonly double[] GearRatios = [0, 3.86, 2.94, 2.30, 1.91, 1.59, 1.34, 1.16, 1.00, 1.00];
     private const double FinalDriveRatio = 3.9;
     private const double MaxEngineRPM = 15000.0;
     private const double MinEngineRPM = 5000.0;
-
     public bool ClutchEngaged { get; set; } = true;
     public bool DRSEngaged { get; set; } = false;
     public bool Reverse { get; set; } = false;
     public int Gear { get; set; } = 1;
-    public double RPM { get; private set; } = 7000.0;
+    public double RPM { get; private set; } = 5000.0;
     public float Speed { get; set; } = 0.0f;
     public float Acceleration { get; set; } = 0.00f;
-    public float DRS => DRSEngaged ? 0.7f : 1.0f;
-    public float Drag => 0.02f * Speed * DRS;
-
+    public float DRS => DRSEngaged ? 1.0f : 0.0f;
+    public float Drag => (0.02f - (0.02f * DRS)) * Speed ;
+    public float ERS { get; set; } = 100.0f;
+    public ERSStates ERSState { get; set; } = ERSStates.Balanced;
+    public enum ERSStates { Off, Harvest, Balanced, Attack }
     public void UpdateRPM()
     {
         if (NormalizeGear(Gear) == 0 || NormalizeGear(Gear) > 8)
@@ -1110,44 +1319,54 @@ class Car
             RPM = MinEngineRPM + Math.Abs(Speed);
         }
     }
-
-    public int NormalizeGear(int gear)
-    {
-        if (gear == 0) return 1;
-        if (gear == 1) return 0;
-        if (gear <= 6) return 1;
-        if (gear == 7) return 2;
-        if (gear == 8) return 3;
-        if (gear == 9) return 4;
-        if (gear == 10) return 5;
-        if (gear == 11) return 6;
-        if (gear == 12) return 7;
-        return 8;
-    }
-
     public void Accelerate(float input, float fElapsedTime)
     {
-        if (ClutchEngaged)
-        {
-            Speed += Reverse ? -((GearAccelerations[Gear] * input - Drag) * fElapsedTime)
-                             : (GearAccelerations[Gear] * input - Drag) * fElapsedTime;
-            Acceleration = (GearAccelerations[Gear] * input) - Drag;
-        }
-        else
+        if (!ClutchEngaged)
         {
             Speed = 0.0001f;
+            return;
         }
-    }
 
+        float baseAccel = GearAccelerations[Gear] * input;
+
+        float ersBoost = 1.0f;
+        float ersUse = 0.0f;
+
+        if (ERS > 0.0f)
+        {
+            if (ERSState == ERSStates.Balanced)
+            {
+                ersBoost = 1.05f;
+                ersUse = 2.0f;
+            }
+            else if (ERSState == ERSStates.Attack)
+            {
+                ersBoost = 1.2f;
+                ersUse = 10.0f;
+            }
+        }
+
+        baseAccel *= ersBoost;
+
+        if (ersUse > 0f)
+        {
+            ERS -= ersUse * fElapsedTime;
+            if (ERS < 0f) ERS = 0f;
+        }
+
+        float accel = (baseAccel - Drag) * fElapsedTime;
+
+        Acceleration = accel / fElapsedTime;
+
+        Speed += Reverse ? -accel : accel;
+    }
     public void Decelerate(float input, float fElapsedTime)
     {
         Speed += Reverse ? 0.2f * input * fElapsedTime : -(0.2f * input * fElapsedTime);
         Acceleration = 0;
     }
-
     public void ShiftUp() => Gear = (Gear < GearAccelerations.Length - 1) && Gear > 0 ? Gear + 1 : Gear;
     public void ShiftDown() => Gear = Gear > 1 ? Gear - 1 : Gear;
-
     public void ReverseGear()
     {
         if (Gear == 1 && Speed <= 0.02f)
@@ -1163,7 +1382,27 @@ class Car
             Gear++;
         }
     }
-
+    public void ChargeERS(float inputRate, float deltaTime)
+    {
+        float rate = 0.0f;
+        switch (ERSState)
+        {
+            case ERSStates.Harvest:
+                rate = 10.0f;
+                break;
+            case ERSStates.Balanced:
+                rate = 2.0f;
+                break;
+            case ERSStates.Attack:
+            case ERSStates.Off:
+                return;
+        }
+        if (Speed <= 0.001f)
+            rate = 0.0f;
+        ERS += rate * inputRate * deltaTime;
+        ERS = Math.Clamp(ERS, 0.0f, 100.0f);
+    }
+    
     public static readonly float[] GearAccelerations =
     [
         0.1f, 
@@ -1198,7 +1437,6 @@ class EngineSound
     private readonly EngineWaveProvider waveProvider;
     private Thread? soundThread;
     private bool running = false;
-
     private double RPM = 5000;       
     private int gear = 1;                
     private double acceleration = 0;     
@@ -1232,7 +1470,7 @@ class EngineSound
     {
         while (running)
         {
-            Thread.Sleep(50);
+            Thread.Sleep(100);
         }
     }
 
@@ -1249,9 +1487,12 @@ class EngineWaveProvider : WaveProvider32
     private readonly Func<double> getRPM;
     private readonly Func<int> getGear;
     private readonly Func<double> getAcceleration;
+
     private readonly int sampleRate = 44100;
     private double phase = 0;
-    private const int NumHarmonics = 20;
+    private const int harmonics = 10;
+
+    private readonly Random random = new();
 
     public EngineWaveProvider(Func<double> rpmFunc, Func<int> gearFunc, Func<double> accelerationFunc)
     {
@@ -1267,10 +1508,8 @@ class EngineWaveProvider : WaveProvider32
         int gear = getGear();
         double acceleration = getAcceleration();
 
-        Random random = new();
-
-        double baseFrequency = 30 + (rpm - 5000) / 1000.0 * 10;
-        baseFrequency = Math.Clamp(baseFrequency, 30, 1000);
+        double baseFrequency = 33 + (rpm - 5000) / 1000.0 * 10;
+        baseFrequency = Math.Clamp(baseFrequency, 33, 1000);
 
         double accelFactor = Math.Max(0, acceleration) / 510;
         double decelFactor = acceleration <= 0 ? 1 : 0;
@@ -1285,16 +1524,14 @@ class EngineWaveProvider : WaveProvider32
             _ => 0.24
         };
 
-        // Overall amplitude scaled by acceleration, deceleration, and gear.
         double amplitudeBase = Math.Clamp((0.5 + accelFactor - 0.3 * decelFactor) * gearFactor, 0.1, 1.2);
         double sampleValue;
 
         for (int i = 0; i < sampleCount; i++)
         {
-
-            // MAIN ENGINE TONE: Sum weighted harmonics.
+            // MAIN ENGINE TONE
             double mainEngine = 0;
-            for (int h = 1; h <= NumHarmonics; h++)
+            for (int h = 1; h <= harmonics; h++)
             {
                 double weight = (h <= 3 ? 1.0 : (h <= 6 ? 0.6 : 0.3)) * gearFactor;
                 if (accelFactor > 0 && h > 3)
@@ -1303,23 +1540,23 @@ class EngineWaveProvider : WaveProvider32
                     weight /= (1 + decelFactor * 5);
                 mainEngine += weight * Math.Sin(phase * h);
             }
-            mainEngine = (mainEngine / NumHarmonics) * amplitudeBase;
+            mainEngine = (mainEngine / harmonics) * amplitudeBase;
 
-            // WHINE: High-frequency modulation adds an edge.
+            // WHINE
             double whine = 0.2 * gearFactor * Math.Sin(phase * 10 * (1 + accelFactor))
                          * Math.Sin(phase * 0.3 * (1 + decelFactor));
 
-            // POWER STROKE: Occasional burst to simulate combustion dynamics.
+            // POWER STROKE
             double powerStroke = (Math.Sin(phase * 0.5 * gearFactor) * Math.Sin(phase * 3.2 * accelFactor))
                                * (random.NextDouble() > 0.95 ? 0.5 * gearFactor : 0);
 
-            // VIBRATION: High-frequency micro-modulations simulating physical vibrations.
+            // VIBRATION
             double vibration = 0.1 * gearFactor * Math.Sin(phase * 25) * Math.Sin(phase * 0.8);
 
-            // MECHANICAL NOISE: Random gritty noise.
+            // MECHANICAL NOISE
             double mechanicalNoise = (random.NextDouble() - 0.5) * 0.05 * gearFactor;
 
-            // VISERAL GROWL: Low-pitched, throaty layer using non-linear saturation.
+            // GROWL
             double growl = 0;
             if (accelFactor > 0.3)
             {
@@ -1327,7 +1564,6 @@ class EngineWaveProvider : WaveProvider32
                 growl = Math.Tanh(rawGrowl * 3) * 0.4 * (accelFactor - 0.3) * gearFactor;
             }
 
-            // Sum all layers to get the final sample value.
             sampleValue = mainEngine + whine + powerStroke + vibration
                           + mechanicalNoise + growl;
 
