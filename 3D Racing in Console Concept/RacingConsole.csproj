@@ -12,7 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="SharpDX.XInput" Version="4.2.0" />
     <PackageReference Include="System.Windows.Extensions" Version="9.0.3" />
+    <PackageReference Include="Uno.UI" Version="5.6.99" />
   </ItemGroup>
 
 </Project>
