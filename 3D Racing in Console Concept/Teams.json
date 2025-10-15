@@ -1,0 +1,245 @@
+[
+  {
+    "Id": "McLaren",
+    "ColorBase": "#e9a022",
+    "ColorShade": "#e76211",
+    "ColorParts": "#121212",
+    "Logo": " ᓓ",
+    "TeamColor": "#FF8000",
+    "Drivers": [
+      {
+        "Code": "NOR",
+        "FirstName": "Lando",
+        "LastName": "Norris",
+        "Nationality": "British",
+        "Skill": 240
+      },
+      {
+        "Code": "PIA",
+        "FirstName": "Oscar",
+        "LastName": "Piastri",
+        "Nationality": "Australian",
+        "Skill": 240
+      }
+    ]
+  },
+  {
+    "Id": "Ferrari",
+    "ColorBase": "#ff0101",
+    "ColorShade": "#910200",
+    "ColorParts": "#121212",
+    "Logo": "🐎",
+    "TeamColor": "#fff200",
+    "Drivers": [
+      {
+        "Code": "LEC",
+        "FirstName": "Charles",
+        "LastName": "Leclerc",
+        "Nationality": "Monégasque",
+        "Skill": 240
+      },
+      {
+        "Code": "HAM",
+        "FirstName": "Lewis",
+        "LastName": "Hamilton",
+        "Nationality": "British",
+        "Skill": 254
+      }
+    ]
+  },
+  {
+    "Id": "Mercedes",
+    "ColorBase": "#a9bbc2",
+    "ColorShade": "#2c2f30",
+    "ColorParts": "#121212",
+    "Logo": " ✇",
+    "TeamColor": "#d7dee0",
+    "Drivers": [
+      {
+        "Code": "RUS",
+        "FirstName": "George",
+        "LastName": "Russell",
+        "Nationality": "British",
+        "Skill": 238
+      },
+      {
+        "Code": "ANT",
+        "FirstName": "Kimi",
+        "LastName": "Antonelli",
+        "Nationality": "Italian",
+        "Skill": 176
+      }
+    ]
+  },
+  {
+    "Id": "Red Bull",
+    "ColorBase": "#282e55",
+    "ColorShade": "#202440",
+    "ColorParts": "#121212",
+    "Logo": "🐃",
+    "TeamColor": "#ce2e30",
+    "AccentColor": "#fbd840",
+    "Drivers": [
+      {
+        "Code": "VER",
+        "FirstName": "Max",
+        "LastName": "Verstappen",
+        "Nationality": "Dutch",
+        "Skill": 255
+      },
+      {
+        "Code": "TSU",
+        "FirstName": "Yuki",
+        "LastName": "Tsunoda",
+        "Nationality": "Japanese",
+        "Skill": 213
+      }
+    ]
+  },
+  {
+    "Id": "Williams",
+    "ColorBase": "#0e50ee",
+    "ColorShade": "#022778",
+    "ColorParts": "#121212",
+    "Logo": " Ꮃ",
+    "TeamColor": "#ffffff",
+    "AccentColor": "#ae5f47",
+    "Drivers": [
+      {
+        "Code": "ALB",
+        "FirstName": "Alexander",
+        "LastName": "Albon",
+        "Nationality": "Thai",
+        "Skill": 211
+      },
+      {
+        "Code": "SAI",
+        "FirstName": "Carlos",
+        "LastName": "Sainz",
+        "Nationality": "Spanish",
+        "Skill": 220
+      }
+    ]
+  },
+  {
+    "Id": "Kick Sauber",
+    "ColorBase": "#47cf10",
+    "ColorShade": "#222222",
+    "ColorParts": "#121212",
+    "Logo": " ⛕",
+    "TeamColor": "#05d914",
+    "Drivers": [
+      {
+        "Code": "HUL",
+        "FirstName": "Nico",
+        "LastName": "Hülkenberg",
+        "Nationality": "German",
+        "Skill": 255
+      },
+      {
+        "Code": "BOR",
+        "FirstName": "Gabriel",
+        "LastName": "Bortoleto",
+        "Nationality": "Brazilian",
+        "Skill": 163
+      }
+    ]
+  },
+  {
+    "Id": "Racing Bulls",
+    "ColorBase": "#4169E1",
+    "ColorShade": "#3049B3",
+    "ColorParts": "#121212",
+    "Logo": "🐂",
+    "TeamColor": "#ffffff",
+    "Drivers": [
+      {
+        "Code": "LAW",
+        "FirstName": "Liam",
+        "LastName": "Lawson",
+        "Nationality": "New Zealander",
+        "Skill": 151
+      },
+      {
+        "Code": "HAD",
+        "FirstName": "Isack",
+        "LastName": "Hadjar",
+        "Nationality": "French",
+        "Skill": 178
+      }
+    ]
+  },
+  {
+    "Id": "Aston Martin",
+    "ColorBase": "#008a75",
+    "ColorShade": "#005a44",
+    "ColorParts": "#121212",
+    "Logo": " ⛊",
+    "TeamColor": "#c6c8ce",
+    "Drivers": [
+      {
+        "Code": "ALO",
+        "FirstName": "Fernando",
+        "LastName": "Alonso",
+        "Nationality": "Spanish",
+        "Skill": 251
+      },
+      {
+        "Code": "STR",
+        "FirstName": "Lance",
+        "LastName": "Stroll",
+        "Nationality": "Canadian",
+        "Skill": 209
+      }
+    ]
+  },
+  {
+    "Id": "Haas",
+    "ColorBase": "#fdfdfb",
+    "ColorShade": "#b1b4b9",
+    "ColorParts": "#121212",
+    "Logo": " ꓧ",
+    "TeamColor": "#d7051c",
+    "AccentColor": "#ff0f25",
+    "Drivers": [
+      {
+        "Code": "OCO",
+        "FirstName": "Esteban",
+        "LastName": "Ocon",
+        "Nationality": "French",
+        "Skill": 221
+      },
+      {
+        "Code": "BEA",
+        "FirstName": "Oliver",
+        "LastName": "Bearman",
+        "Nationality": "British",
+        "Skill": 169
+      }
+    ]
+  },
+  {
+    "Id": "Alpine",
+    "ColorBase": "#0073b8",
+    "ColorShade": "#c86397",
+    "ColorParts": "#121212",
+    "Logo": " ᗋ",
+    "TeamColor": "#0090ff",
+    "Drivers": [
+      {
+        "Code": "GAS",
+        "FirstName": "Pierre",
+        "LastName": "Gasly",
+        "Nationality": "French",
+        "Skill": 229
+      },
+      {
+        "Code": "COL",
+        "FirstName": "Franco",
+        "LastName": "Colapinto",
+        "Nationality": "Argentinian",
+        "Skill": 161
+      }
+    ]
+  }
+]

@@ -1,0 +1,169 @@
+[
+  {
+    "Id": "Monza",
+    "Circuit": {
+      "Id": "Monza",
+      "DisplayName": "Italian Grand Prix",
+      "CircuitMap": [
+        "╭─────╮                         ",
+        "╰╮    ╰─╮                       ",
+        " │      ╰─╮                     ",
+        " ╰╮       ╰─╮                   ",
+        "  │         ╰──╮                ",
+        "  │            ╰───────────────╮",
+        "  ╰─╮      ╭╮                ╭─╯",
+        "    ╰──────╯╰────────────╌───╯  ",
+        ""
+      ],
+      "Segments": [
+        { "Curvature": 0.0, "Length": 550.0, "Section": 0, "CornerType": "None" },
+        { "Curvature": 1.0, "Length": 70.0, "Section": 1, "CornerType": "ChicaneR" },
+        { "Curvature": -1.0, "Length": 35.0, "Section": 1, "CornerType": "ChicaneR" },
+        { "Curvature": -1.2, "Length": 80.0, "Section": 2, "CornerType": "None" },
+        { "Curvature": 1.2, "Length": 40.0, "Section": 2, "CornerType": "None" },
+        { "Curvature": 0.14, "Length": 420.0, "Section": 3, "CornerType": "NormalR" },
+        { "Curvature": 0.001, "Length": 310.0, "Section": 3, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 10.0, "Section": 0, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 10.0, "Section": -1, "CornerType": "None" },
+        { "Curvature": -1.0, "Length": 60.0, "Section": 4, "CornerType": "ChicaneL" },
+        { "Curvature": 1.0, "Length": 50.0, "Section": 4, "CornerType": "ChicaneL" },
+        { "Curvature": 1.0, "Length": 60.0, "Section": 5, "CornerType": "None" },
+        { "Curvature": -1.0, "Length": 25.0, "Section": 5, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 200.0, "Section": 5, "CornerType": "None" },
+        { "Curvature": 0.9, "Length": 55.0, "Section": 6, "CornerType": "NormalR" },
+        { "Curvature": 0.0, "Length": 210.0, "Section": 6, "CornerType": "None" },
+        { "Curvature": 0.8, "Length": 55.0, "Section": 7, "CornerType": "NormalR" },
+        { "Curvature": 0.0, "Length": 200.0, "Section": 7, "CornerType": "None" },
+        { "Curvature": -0.1, "Length": 200.0, "Section": 7, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 400.0, "Section": 7, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 10.0, "Section": 0, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 10.0, "Section": -2, "CornerType": "None" },
+        { "Curvature": -0.8, "Length": 80.0, "Section": 8, "CornerType": "NormalL" },
+        { "Curvature": 0.8, "Length": 80.0, "Section": 8, "CornerType": "None" },
+        { "Curvature": 0.36, "Length": 120.0, "Section": 9, "CornerType": "NormalR" },
+        { "Curvature": -0.36, "Length": 69.0, "Section": 9, "CornerType": "None" },
+        { "Curvature": -0.8, "Length": 80.0, "Section": 10, "CornerType": "NormalL" },
+        { "Curvature": 0.8, "Length": 50.0, "Section": 10, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 550.0, "Section": 10, "CornerType": "None" },
+        { "Curvature": 0.2, "Length": 335.0, "Section": 11, "CornerType": "NormalR" },
+        { "Curvature": -0.1, "Length": 55.0, "Section": 11, "CornerType": "NormalR" },
+        { "Curvature": -0.01, "Length": 105.0, "Section": 11, "CornerType": "None" },
+        { "Curvature": 0.0, "Length": 70.0, "Section": 11, "CornerType": "None" }
+      ],
+      "DRSZones": [
+        { "Start": 0.0, "End": 540.0 },
+        { "Start": 2400.0, "End": 3050.0 }
+      ]
+    },
+    "Track": {
+      "GrassColor1": "#22B14C",
+      "GrassColor2": "#15D653",
+      "ClipColor1":  "#F4F9FF",
+      "ClipColor2":  "#CD212A",
+      "ClipColor3":  "#008C45",
+      "RoadColor":   "#4D4D52"
+    },
+    "Scenery": {
+      "Seed":                 123456,
+      "MaxVisibleDistance":   100.0,
+      "TreeSpacing":           8.0,
+      "Size":                  0.8,
+      "HeightJitter":          0.5,
+      "RoadOffset":            0.3,
+      "ConeRatio":             1.8,
+      "BaseCanopyHalfWidth":  28,
+      "BaseCanopyHeight":     28,
+      "BaseTrunkHalfWidth":    5,
+      "BaseTrunkHeight":      10,
+      "BaseCanopyColor":     "#1C8C3D",
+      "ColorJitterCanopy":    0.1,
+      "BaseTrunkColor":      "#664332",
+      "ColorJitterTrunk":     0.1,
+      "SkyColor":            "#4178C8"
+    }
+  },
+  {
+    "Id": "Silverstone",
+    "Circuit": {
+      "Id": "Silverstone",
+      "DisplayName": "British Grand Prix",
+      "CircuitMap": [
+        "        ╭──╮                 ",
+        "        │  ╰─╮          ╭──╮ ",
+        "      ╭─╯    ╰─╮        ╰─╮╰╮",
+        "   ╭──╯        ╰─╮       ╭╯ │",
+        "╭──╯             │     ╭─╯  │",
+        "╰───╮            ╰╮  ╭─╯    │",
+        "    ╰───╮       ╭─╯╭─╯      │",
+        "        ╰───╮   ╰──╯    ╭───╯",
+        "            ╰───────────╯    "
+      ],
+      "Segments": [
+        { "Curvature": 0.00, "Length": 700.0, "Section": 0, "CornerType": "None" },
+        
+        { "Curvature": 0.85, "Length": 70.0, "Section": 1, "CornerType": "NormalR" },
+        { "Curvature": -0.85, "Length": 70.0, "Section": 1, "CornerType": "NormalL" },
+        
+        { "Curvature": 0.60, "Length": 80.0, "Section": 2, "CornerType": "NormalR" },
+        
+        { "Curvature": -0.50, "Length": 100.0, "Section": 3, "CornerType": "NormalL" },
+        { "Curvature": 0.00, "Length": 200.0, "Section": 3, "CornerType": "None" },
+        
+        { "Curvature": -0.40, "Length": 80.0, "Section": 4, "CornerType": "NormalL" },
+        
+        { "Curvature": 0.70, "Length": 120.0, "Section": 5, "CornerType": "NormalR" },
+        
+        { "Curvature": 0.40, "Length": 150.0, "Section": 6, "CornerType": "NormalR" },
+        
+        { "Curvature": 0.00, "Length": 870.0, "Section": 0, "CornerType": "None" },
+        
+        { "Curvature": 0.70, "Length": 100.0, "Section": 7, "CornerType": "NormalR" },
+        
+        { "Curvature": 0.90, "Length": 80.0, "Section": 8, "CornerType": "NormalR" },
+        { "Curvature": -0.80, "Length": 60.0, "Section": 8, "CornerType": "NormalL" },
+        { "Curvature": 0.80, "Length": 60.0, "Section": 8, "CornerType": "NormalR" },
+        
+        { "Curvature": 0.60, "Length": 100.0, "Section": 9, "CornerType": "NormalR" },
+        
+        { "Curvature": 0.00, "Length": 870.0, "Section": 0, "CornerType": "None" },
+        
+        { "Curvature": -0.70, "Length": 100.0, "Section": 10, "CornerType": "NormalL" },
+        
+        { "Curvature": -0.60, "Length": 80.0, "Section": 11, "CornerType": "NormalL" },
+        
+        { "Curvature": 0.50, "Length": 100.0, "Section": 12, "CornerType": "NormalR" },
+        { "Curvature": 0.00, "Length": 500.0, "Section": 12, "CornerType": "None" }
+      ],
+      "DRSZones": [
+        { "Start": 2170.0, "End": 3040.0 },
+        { "Start": 3440.0, "End": 4310.0 } 
+      ]
+    },
+    "Track": {
+      "GrassColor1": "#1E8D3A",
+      "GrassColor2": "#2BA54F",
+      "ClipColor1": "#F4F9FF",
+      "ClipColor2": "#0047AB",
+      "ClipColor3": "#CF142B",
+      "RoadColor": "#4A4A50"
+    },
+    "Scenery": {
+      "Seed": 654321,
+      "MaxVisibleDistance": 120.0,
+      "TreeSpacing": 12.0,
+      "Size": 0.75,
+      "HeightJitter": 0.4,
+      "RoadOffset": 0.25,
+      "ConeRatio": 2.0,
+      "BaseCanopyHalfWidth": 24,
+      "BaseCanopyHeight": 25,
+      "BaseTrunkHalfWidth": 4,
+      "BaseTrunkHeight": 12,
+      "BaseCanopyColor": "#1A7932",
+      "ColorJitterCanopy": 0.15,
+      "BaseTrunkColor": "#5C4033",
+      "ColorJitterTrunk": 0.1,
+      "SkyColor": "#78C6E6"
+    }
+  }
+]
